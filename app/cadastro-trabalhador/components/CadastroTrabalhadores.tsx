@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -20,20 +20,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { toast } from "sonner"
-import { validarCPF, formatarCPF } from "../utils/cpf-validator"
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { validarCPF, formatarCPF } from "../utils/cpf-validator";
 
 const formSchema = z.object({
-  nomeCompleto: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
+  nomeCompleto: z
+    .string()
+    .min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
   perfil: z.string().min(1, { message: "Selecione um perfil" }),
   matricula: z.string().min(1, { message: "Matrícula é obrigatória" }),
   cpf: z
@@ -46,9 +48,9 @@ const formSchema = z.object({
   funcao: z.string().min(1, { message: "Função é obrigatória" }),
   status: z.string().min(1, { message: "Status é obrigatório" }),
   alocacao: z.string().min(1, { message: "Selecione uma alocação" }),
-})
+});
 
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
 // Tipagem para as opções de alojamento
 type AlojamentoOption = {
@@ -62,17 +64,19 @@ const perfisOptions = [
   { value: "motorista", label: "Motorista" },
   { value: "administrativo", label: "Administrativo" },
   { value: "supervisor", label: "Supervisor" },
-]
+];
 
 const statusOptions = [
   { value: "ativo", label: "Ativo" },
   { value: "afastado", label: "Afastado" },
   { value: "desligado", label: "Desligado" },
-]
+];
 
 export default function CadastroTrabalhadores() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [alocacaoOptions, setAlocacaoOptions] = useState<AlojamentoOption[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alocacaoOptions, setAlocacaoOptions] = useState<AlojamentoOption[]>(
+    []
+  );
 
   useEffect(() => {
     fetch("http://localhost:3300/alojamentos")
@@ -80,12 +84,12 @@ export default function CadastroTrabalhadores() {
       .then((data) => {
         const opcoesFormatadas: AlojamentoOption[] = data.map((alo: any) => ({
           value: String(alo.id),
-          label: alo.nome,
-        }))
-        setAlocacaoOptions(opcoesFormatadas)
+          label: `${alo.rua}, ${alo.numero} - ${alo.bairro}`,
+        }));
+        setAlocacaoOptions(opcoesFormatadas);
       })
-      .catch((err) => console.error("Erro ao carregar alojamentos:", err))
-  }, [])
+      .catch((err) => console.error("Erro ao carregar alojamentos:", err));
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -99,52 +103,54 @@ export default function CadastroTrabalhadores() {
       alocacao: "",
     },
     mode: "onChange",
-  })
+  });
 
- const onSubmit = async (data: FormValues) => {
-  setIsSubmitting(true);
+  const onSubmit = async (data: FormValues) => {
+    setIsSubmitting(true);
 
-  try {
-    const response = await fetch("http://localhost:3300/funcionarios", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        nome: data.nomeCompleto,
-        perfil: data.perfil,
-        matricula: data.matricula,
-        cpf: data.cpf,
-        funcao: data.funcao,
-        status: data.status,
-        alocacao: data.alocacao, // esse é o id do alojamento
-      }),
-    });
+    try {
+      const response = await fetch("http://localhost:3300/funcionarios", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          nome: data.nomeCompleto,
+          perfil: data.perfil,
+          matricula: data.matricula,
+          cpf: data.cpf,
+          funcao: data.funcao,
+          status: data.status,
+          alocacao: data.alocacao, // esse é o id do alojamento
+        }),
+      });
 
-    if (!response.ok) throw new Error("Erro ao salvar funcionário");
+      if (!response.ok) throw new Error("Erro ao salvar funcionário");
 
-    const alocacaoSelecionada =
-      alocacaoOptions.find((option) => option.value === data.alocacao)?.label || "não especificada";
+      const alocacaoSelecionada =
+        alocacaoOptions.find((option) => option.value === data.alocacao)
+          ?.label || "não especificada";
 
-    toast.success(
-      `Cadastro realizado com sucesso! O colaborador ${data.nomeCompleto} foi cadastrado na alocação: ${alocacaoSelecionada}`,
-      { duration: 5000 }
-    );
+      toast.success(
+        `Cadastro realizado com sucesso! O colaborador ${data.nomeCompleto} foi cadastrado na alocação: ${alocacaoSelecionada}`,
+        { duration: 5000 }
+      );
 
-    form.reset();
-  } catch (err) {
-    toast.error("Erro ao cadastrar funcionário.");
-    console.error(err);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
+      form.reset();
+    } catch (err) {
+      toast.error("Erro ao cadastrar funcionário.");
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Card className="w-full shadow-sm border border-gray-200 rounded-lg">
       <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-bold">Cadastro de Trabalhadores</CardTitle>
+        <CardTitle className="text-3xl font-bold">
+          Cadastro de Trabalhadores
+        </CardTitle>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -159,7 +165,11 @@ export default function CadastroTrabalhadores() {
                   <FormItem className="mb-6">
                     <FormLabel className="font-medium">Nome completo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Nome completo do colaborador" {...field} className="h-10 w-full" />
+                      <Input
+                        placeholder="Nome completo do colaborador"
+                        {...field}
+                        className="h-10 w-full"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -173,7 +183,10 @@ export default function CadastroTrabalhadores() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">Perfil</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger className="h-10 w-full">
                             <SelectValue placeholder="Selecione um perfil" />
@@ -198,7 +211,10 @@ export default function CadastroTrabalhadores() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium">Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger className="h-10 w-full">
                             <SelectValue placeholder="Selecione um status" />
@@ -226,7 +242,11 @@ export default function CadastroTrabalhadores() {
                     <FormItem>
                       <FormLabel className="font-medium">Matrícula</FormLabel>
                       <FormControl>
-                        <Input placeholder="Número de matrícula" {...field} className="h-10 w-full" />
+                        <Input
+                          placeholder="Número de matrícula"
+                          {...field}
+                          className="h-10 w-full"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -246,11 +266,11 @@ export default function CadastroTrabalhadores() {
                           {...field}
                           className="h-10 w-full"
                           onChange={(e) => {
-                            const formatted = formatarCPF(e.target.value)
-                            field.onChange(formatted)
+                            const formatted = formatarCPF(e.target.value);
+                            field.onChange(formatted);
                           }}
                           onBlur={() => {
-                            form.trigger("cpf")
+                            form.trigger("cpf");
                           }}
                         />
                       </FormControl>
@@ -267,7 +287,11 @@ export default function CadastroTrabalhadores() {
                   <FormItem className="mt-6">
                     <FormLabel className="font-medium">Função</FormLabel>
                     <FormControl>
-                      <Input placeholder="Função do colaborador" {...field} className="h-10 w-full" />
+                      <Input
+                        placeholder="Função do colaborador"
+                        {...field}
+                        className="h-10 w-full"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -283,7 +307,10 @@ export default function CadastroTrabalhadores() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-medium">Alojamento</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger className="h-10 w-full">
                           <SelectValue placeholder="Selecione um alojamento" />
@@ -326,5 +353,5 @@ export default function CadastroTrabalhadores() {
         </form>
       </Form>
     </Card>
-  )
+  );
 }
